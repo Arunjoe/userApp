@@ -71,7 +71,7 @@
 
 (defn helping []
   (println "Available options")
-  (println "[add] [show] [delete] [logout] [lookup] [help]"))
+  (println "[add] [show] [delete]  [lookup] [logout][help]"))
 
 (defn login_check[username_attempt]
   (def matching_doc (mc/find-maps db coll { :name username_attempt }))
@@ -109,8 +109,7 @@
   (if (and (= loginID user_name) (= passID password))
       (do (reset! isAuth 1)
           (reset! privilege (nth mongo_return 2))
-          (println "Hi"user_name", you are logged in successfully - Access Level"@privilege)
-          )
+          (println "Hi"user_name", you are logged in successfully - Access Level"@privilege))
       (do (println "Invalid username or password")))
 
   (while (= @isAuth 1)
@@ -126,8 +125,7 @@
                   "delete" (delete_contacts @privilege)
                   "help" (helping)
                   "lookup" (look_up_by_name @privilege)
-                  (println "Enter valid commands"))
-          )))))
+                  (println "Enter valid commands")))))))
 
 (defn -main
   "main"
