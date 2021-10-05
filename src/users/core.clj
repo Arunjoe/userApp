@@ -83,7 +83,7 @@
 (defn look_up_by_name [lookup_access_level]
   (def username_lookup (reader_function "Search for user:"))
   (def lookup_doc (mc/find-maps db coll {:name username_lookup}))
-  ;; (def doc_empty (empty? lookup_doc))
+  (def doc_empty (empty? lookup_doc))
   (if (not (empty? lookup_doc))
     (do
       (def lookup_name ((select-keys (first lookup_doc) [:name]) :name))
