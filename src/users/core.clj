@@ -10,8 +10,11 @@
 
 (defn reader_function [command]
   (println command ": ")
-  (def console_input (read-line))
-  console_input)
+  ;; (def console_input (read-line))
+  ;; console_input)
+
+(let [console_input (read-line)]
+  console_input))
 
 (defn show_contacts [level]
   (def db_dump (mc/find-maps db coll))
@@ -20,13 +23,13 @@
   (println "ID \t name \t phone \t \t privilege")
   (while (< @i length_of_list)
     (do
-       (let [useri (nth db_dump @i)]
-         (def namei ((select-keys useri [:name]) :name))
-         (def phonei ((select-keys useri [:phone]) :phone))
-         (def idi ((select-keys useri [:ID]) :ID))
-         (def i_id ((select-keys useri [:_id]) :_id))
-         (def prevli ((select-keys useri [:prevl]) :prevl))
-         (def passi ((select-keys useri [:password]) :password))
+       (let [useri (nth db_dump @i)
+          namei ((select-keys useri [:name]) :name)
+         phonei ((select-keys useri [:phone]) :phone)
+         idi ((select-keys useri [:ID]) :ID)
+        ;;  i_id ((select-keys useri [:_id]) :_id)
+         prevli ((select-keys useri [:prevl]) :prevl)
+         passi ((select-keys useri [:password]) :password)]
          (case level
            1 (println idi "\t" namei "\t" phonei "\t" prevli "\t" passi)
            2 (println idi "\t" namei "\t" phonei "\t" prevli)
@@ -34,22 +37,21 @@
            (println "you are not authorized to view any details")))
        (swap! i inc))))
 
-(defn adding_to_db[add_db_access_level]
-  (def new_name (reader_function "username"))
-  (def user_id (reader_function "user ID"))
-  (def user_privil (Integer/parseInt (reader_function "privilege")))
-  (def user_phone (reader_function "Phone Number"))
-  (def user_pass (reader_function "Password"))
-  (if (< user_privil add_db_access_level)
-    (println "you don't have authority to add higher privileged user")
+(defn adding_to_db [add_db_access_level]
+  (let [new_name (reader_function "username")
+        user_id (reader_function "user ID")
+        user_privil (Integer/parseInt (reader_function "privilege"))
+        user_phone (reader_function "Phone Number")
+        user_pass (reader_function "Password")]
+    (if (< user_privil add_db_access_level)
+      (println "you don't have authority to add higher privileged user")
   ;; (mc/insert-and-return db coll {:name new_name :ID user_id :prevl user_privil :phone user_phone :password user_pass})
-  (mc/insert db coll { :_id (ObjectId.) :name new_name :ID user_id :prevl user_privil :phone user_phone :password user_pass}))
-)
+      (mc/insert db coll {:_id (ObjectId.) :name new_name :ID user_id :prevl user_privil :phone user_phone :password user_pass}))))
 
 (defn deleting_from_db [delete_db_access_level]
   (def delete_name (reader_function "Which user do you wanna delete ?"))
 
-  (def lookup_doc (mc/find-maps db coll {:name delete_name}))
+  (let [lookup_doc (mc/find-maps db coll {:name delete_name})]
   ;; (def doc_empty (empty? lookup_doc))
   (if (not (empty? lookup_doc))
     (do
@@ -57,7 +59,7 @@
       (if (= lookup_prevl 1)
         (println "you cannot delete higher privileged user")
         (mc/remove db coll {:name delete_name})))
-    (println "There is no such user")))
+    (println "There is no such user"))))
 
 (defn add_contacts [add_access_level]
   (if (or (= add_access_level 1) (= add_access_level 2))
@@ -71,19 +73,23 @@
 
 (defn helping []
   (println "Available options")
-  (println "[add] [show] [delete]  [lookup] [logout][help]"))
+  (println "[add] [show] [del]  [lookup] [logout][help]"))
 
-(defn login_check[username_attempt]
-  (def matching_doc (mc/find-maps db coll { :name username_attempt }))
-  (def matching_name ((select-keys (first matching_doc) [:name]) :name))
-  (def matching_pass ((select-keys (first matching_doc) [:password]) :password))
-  (def matching_prevl ((select-keys (first matching_doc) [:prevl]) :prevl))
-    [matching_name matching_pass matching_prevl])
+(defn login_check [username_attempt]
+  ;; (def matching_doc (mc/find-maps db coll {:name username_attempt}))
+  ;; (def matching_name ((select-keys (first matching_doc) [:name]) :name))
+  ;; (def matching_pass ((select-keys (first matching_doc) [:password]) :password))
+  ;; (def matching_prevl ((select-keys (first matching_doc) [:prevl]) :prevl))
+  ;; [matching_name matching_pass matching_prevl]
+  (let [matching_doc (mc/find-maps db coll {:name username_attempt})]
+  [((select-keys (first matching_doc) [:name]) :name) 
+   ((select-keys (first matching_doc) [:password]) :password) 
+   ((select-keys (first matching_doc) [:prevl]) :prevl)]))
 
 (defn look_up_by_name [lookup_access_level]
   (def username_lookup (reader_function "Search for user:"))
   (def lookup_doc (mc/find-maps db coll {:name username_lookup}))
-  (def doc_empty (empty? lookup_doc))
+  ;; (def doc_empty (empty? lookup_doc))
   (if (not (empty? lookup_doc))
     (do
       (def lookup_name ((select-keys (first lookup_doc) [:name]) :name))
@@ -122,7 +128,7 @@
             (println "------------------------------------------------------------")
             (case word "show"(show_contacts @privilege)
                   "add" (add_contacts @privilege)
-                  "delete" (delete_contacts @privilege)
+                  "del" (delete_contacts @privilege)
                   "help" (helping)
                   "lookup" (look_up_by_name @privilege)
                   (println "Enter valid commands")))))))
