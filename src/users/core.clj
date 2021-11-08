@@ -1,7 +1,16 @@
 (ns users.core
-  (:require [monger.core :as mg])
-  (:require [monger.collection :as mc])
+  (:require [monger.core :as mg]
+            [monger.collection :as mc]
+            [meta-csv.core :as csv]
+            [clojure.java.io :as io])
   (:import org.bson.types.ObjectId))
+
+
+(defmacro with-try-catch
+  [& body]
+  `(try
+     ~@body
+     (catch Throwable t# (println (str "caught exception: " (.toString t#))))))         
 
 (defn initialize []
   (def conn (mg/connect))
@@ -14,8 +23,8 @@
   ;; console_input)
 
 (let [console_input (read-line)]
-  console_input))
-
+  console_input)) 
+     
 (defn show_contacts [level]
   (def db_dump (mc/find-maps db coll))
   (def length_of_list (count db_dump))
@@ -68,7 +77,8 @@
 
 (defn delete_contacts[delete_access_level]
   (if (or (= delete_access_level 1) (= delete_access_level 2))
-    (do (deleting_from_db delete_access_level) (show_contacts delete_access_level))
+    (do (deleting_from_db delete_access_level) 
+        (show_contacts delete_access_level))
     (println "You don't have the privilege")))
 
 (defn helping []
@@ -103,6 +113,48 @@
     (println "there is no such user"))
   (println "------------------------------------------------------------"))
 
+;; (defn export_user[]
+;;   (def username_lookup (reader_function "Search for user:"))
+;;   (def lookup_doc (mc/find-maps db coll {:name username_lookup}))
+;;   ;; (def doc_empty (empty? lookup_doc))
+;;   (if (not (empty? lookup_doc))
+;;     (do
+;;       (def doc_name ((select-keys (first lookup_doc) [:name]) :name))
+;;       (println lookup_doc)
+;;       (let [[uid uname ucontact uprvl upass] lookup_doc])
+;;       ((with-open [wrtr (io/writer (str "./resources/" doc_name ".txt") :append true)] (doseq [i saving_data] (.write wrtr (str i "\n"))))))
+;;     )
+;;   )
+
+(defn read_from_file [prvil]
+  (println "reading from file")
+  (if (< prvil 2)
+    (do
+      (def file_data (csv/read-csv "./resources/tem.csv"))
+      (def rows (count file_data))
+      (let [i (atom 0)]
+        (while (< @i rows)
+           (do
+             (let [[f_uid f_name f_contact f_prvl f_pass] (nth file_data @i)]
+               (println "UserID : " f_uid "Name : " f_name "Contact : " f_contact "Access Level : " f_prvl "Address : " f_pass)
+               (mc/insert db coll {:_id (ObjectId.) :name f_name :ID f_uid :prevl f_prvl :phone f_contact :password f_pass})))
+          (swap! i inc))))
+    (println "you don't have the access to read from a file")))
+
+(defn document[]
+  (-> (slurp "./resources/doc.txt")
+      (println))
+)
+
+(defn save_to_doc []
+  ;; (def docs (reader_function "input the line you need to save"))
+  ;; (spit "./resources/doc.txt" "New line added" :append true)
+  (with-open [wrtr (io/writer "./resources/doc.txt" :append true)]
+    (doseq [i `["a" "abc" "qwe"]]
+      (.write wrtr (str i "\n"))))
+  )
+  
+
 (defn user_app[]
 (def isAuth (atom 0))
   (def privilege (atom 0))
@@ -126,12 +178,17 @@
           (reset! isAuth 0) (println "logging out") (println "------------------------------------------------------------"))
         (do (println "[User:"user_name"][Access Level:"@privilege"] [help to view options]")
             (println "------------------------------------------------------------")
-            (case word "show"(show_contacts @privilege)
-                  "add" (add_contacts @privilege)
-                  "del" (delete_contacts @privilege)
-                  "help" (helping)
-                  "lookup" (look_up_by_name @privilege)
-                  (println "Enter valid commands")))))))
+            (case word
+              "show" (with-try-catch (show_contacts @privilege))
+              "add" (with-try-catch add_contacts @privilege)
+              "del" (delete_contacts @privilege)
+              "help" (helping)
+              "lookup" (look_up_by_name @privilege)
+              "file" (read_from_file @privilege)
+              "doc" (document)
+              "save" (save_to_doc)
+              ;; "exp" (with-try-catch (export_user))
+              (println "Enter valid commands")))))))
 
 (defn -main
   "main"

@@ -1,0 +1,14 @@
+User Managemnt Application
+-Clojure, MongoDB, VSCode
+
+show: Show all users
+add: Add new users
+del: Delete an existing user
+file: Add multiple users from a csv file
+
+Access Level:
+1 - Admin
+2 - Privileged users
+3 - Normal usersa
+abc
+qwe
